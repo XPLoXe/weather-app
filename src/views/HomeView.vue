@@ -10,15 +10,31 @@
       />
       <ul
         class="absolute bg-weather-secondary text-white w-full shadow-md py-2 px-1 top-[66px]"
-        v-if="mapboxSearchResults"
+        v-if="
+          typeof mapboxSearchResults === 'undefined' ||
+          mapboxSearchResults ||
+          (searchQuery.length < 3 && searchQuery.length > 0)
+        "
       >
-        <li
-          v-for="searchResult in mapboxSearchResults"
-          :key="searchResult.iataCode"
-          class="py-2 cursor-pointer"
+        <p class="py-2" v-if="searchError">Sorry, something went wrong, please try again</p>
+
+        <p
+          class="py-2"
+          v-if="
+            (!searchError && typeof mapboxSearchResults === 'undefined') || searchQuery.length < 3
+          "
         >
-          {{ searchResult.name }} ({{ searchResult.address.countryCode }})
-        </li>
+          No results match your query, try a different term
+        </p>
+        <template v-else>
+          <li
+            v-for="searchResult in mapboxSearchResults"
+            :key="searchResult.iataCode"
+            class="py-2 cursor-pointer"
+          >
+            {{ searchResult.name }} ({{ searchResult.address.countryCode }})
+          </li>
+        </template>
       </ul>
     </div>
     <div class="py-20"></div>
@@ -55,35 +71,51 @@ const apiSecret = 'DUMHhESgvsx6FGwh'
 const searchQuery = ref('')
 const queryTimeout = ref(null)
 const mapboxSearchResults = ref(null)
+const searchError = ref(false)
 
 const getSearchResults = () => {
   clearTimeout(queryTimeout.value)
   queryTimeout.value = setTimeout(async () => {
-    if (searchQuery.value !== '') {
-      const tokenResponse = await axios.post(
-        'https://test.api.amadeus.com/v1/security/oauth2/token',
-        `grant_type=client_credentials&client_id=${apiKey}&client_secret=${apiSecret}`,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+    if (searchQuery.value.length > 2) {
+      try {
+        const tokenResponse = await axios.post(
+          'https://test.api.amadeus.com/v1/security/oauth2/token',
+          `grant_type=client_credentials&client_id=${apiKey}&client_secret=${apiSecret}`,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }
+        )
+
+        const accessToken = tokenResponse.data.access_token
+
+        const result = await axios.get(
+          `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`, // Replace with the actual API endpoint
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        )
+
+        mapboxSearchResults.value = result.data.data
+        console.log(mapboxSearchResults.value)
+        console.log(searchError.value)
+        searchError.value = false
+      } catch (error) {
+        if (error.response) {
+          console.log('primer error')
+          if (error.response.data.code === 4926) {
+            console.error('Error: INVALID DATA RECEIVED')
+            console.error('Detail:', error.response.data.detail)
+            console.log('error enter')
           }
         }
-      )
+        console.log(error)
+        searchError.value = true
+      }
 
-      const accessToken = tokenResponse.data.access_token
-
-      const result = await axios.get(
-        `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`, // Replace with the actual API endpoint
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
-      )
-
-      mapboxSearchResults.value = result.data.data
-      console.log(mapboxSearchResults.value)
-      console.log(mapboxSearchResults.value[0].name)
       return
     }
     mapboxSearchResults.value = null
