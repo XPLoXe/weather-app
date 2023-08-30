@@ -31,6 +31,7 @@
             v-for="searchResult in mapboxSearchResults"
             :key="searchResult.iataCode"
             class="py-2 cursor-pointer"
+            @click="previewCity(searchResult)"
           >
             {{ searchResult.name }} ({{ searchResult.address.countryCode }})
           </li>
@@ -44,6 +45,24 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const previewCity = (searchResult) => {
+  console.log(searchResult.geoCode.latitude)
+  router.push({
+    name: 'cityView',
+    params: {
+      country: searchResult.address.countryCode,
+      city: searchResult.name.replaceAll(' ', '')
+    },
+    query: {
+      lat: searchResult.geoCode.latitude,
+      lng: searchResult.geoCode.longitude,
+      preview: true
+    }
+  })
+}
 
 // const mapboxAPIKey =
 //   'pk.eyJ1Ijoiam9obmtvbWFybmlja2kiLCJhIjoiY2t5NjFz0DZvMHJkaDJ1bWx60GVieGxreSJ9.IpojdT3U3NENknF6_WhR2Q'
