@@ -49,7 +49,6 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const previewCity = (searchResult) => {
-  console.log(searchResult.geoCode.latitude)
   router.push({
     name: 'cityView',
     params: {
@@ -109,6 +108,7 @@ const getSearchResults = () => {
 
         const accessToken = tokenResponse.data.access_token
 
+        //https://developers.amadeus.com/self-service/category/destination-experiences/api-doc/city-search/api-reference
         const result = await axios.get(
           `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`, // Replace with the actual API endpoint
           {
@@ -119,8 +119,6 @@ const getSearchResults = () => {
         )
 
         mapboxSearchResults.value = result.data.data
-        console.log(mapboxSearchResults.value)
-        console.log(searchError.value)
         searchError.value = false
       } catch (error) {
         if (error.response) {
@@ -131,7 +129,6 @@ const getSearchResults = () => {
             console.log('error enter')
           }
         }
-        console.log(error)
         searchError.value = true
       }
 
