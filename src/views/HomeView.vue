@@ -53,7 +53,7 @@ const previewCity = (searchResult) => {
     name: 'cityView',
     params: {
       country: searchResult.address.countryCode,
-      city: searchResult.name.replaceAll(' ', '')
+      city: searchResult.name
     },
     query: {
       lat: searchResult.geoCode.latitude,
@@ -110,7 +110,7 @@ const getSearchResults = () => {
 
         //https://developers.amadeus.com/self-service/category/destination-experiences/api-doc/city-search/api-reference
         const result = await axios.get(
-          `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`, // Replace with the actual API endpoint
+          `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`
