@@ -41,6 +41,9 @@ const getCities = async () => {
     // Use Promise.all to perform all the Axios requests concurrently and await their results.
     const weatherData = await Promise.all(requests)
 
+    // Flicker Delay
+    await new Promise((res) => setTimeout(res, 500))
+
     // Update the saved cities with the corresponding weather data.
     weatherData.forEach((value, index) => {
       savedCities.value[index].weather = value.data

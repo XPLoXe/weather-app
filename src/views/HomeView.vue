@@ -1,5 +1,6 @@
 <template>
   <main class="container text-white">
+    <!-- Search Bar -->
     <div class="pt-4 mb-8 relative">
       <input
         type="text"
@@ -28,13 +29,15 @@
         </template>
       </ul>
     </div>
+
     <div class="flex flex-col gap-4">
       <Suspense>
-        <CityList>
-          <template #fallback>
-            <p class="flex flex-col items-center text-white">Loading...</p>
-          </template>
-        </CityList>
+        <CityList />
+        <template #fallback>
+          <div v-for="city in savedCities" :key="city.id">
+            <CityCardSkeleton />
+          </div>
+        </template>
       </Suspense>
     </div>
   </main>
@@ -45,6 +48,17 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import CityList from '../components/CityList.vue'
+import CityCardSkeleton from '../components/CityCardSkeleton.vue'
+
+const savedCities = ref([])
+const getCities = () => {
+  const localStorageCities = localStorage.getItem('savedCities')
+  if (localStorageCities) {
+    // Parse the local storage data to JSON and set it to 'savedCities' ref.
+    savedCities.value = JSON.parse(localStorageCities)
+  }
+}
+getCities()
 
 const router = useRouter()
 const previewCity = (searchResult) => {
