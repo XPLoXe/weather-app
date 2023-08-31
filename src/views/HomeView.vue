@@ -10,35 +10,32 @@
       />
       <ul
         class="absolute bg-weather-secondary text-white w-full shadow-md py-2 px-1 top-[66px]"
-        v-if="
-          typeof mapboxSearchResults === 'undefined' ||
-          mapboxSearchResults ||
-          (searchQuery.length < 3 && searchQuery.length > 0)
-        "
+        v-if="mapboxSearchResults"
       >
-        <p class="py-2" v-if="searchError">Sorry, something went wrong, please try again</p>
-
-        <p
-          class="py-2"
-          v-if="
-            (!searchError && typeof mapboxSearchResults === 'undefined') || searchQuery.length < 3
-          "
-        >
-          No results match your query, try a different term
+        <p class="py-2" v-if="searchError">Sorry, something went wrong, please try again.</p>
+        <p class="py-2" v-if="!searchError && mapboxSearchResults.length === 0">
+          No results match your query, try a different term.
         </p>
         <template v-else>
           <li
             v-for="searchResult in mapboxSearchResults"
-            :key="searchResult.iataCode"
+            :key="searchResult.id"
             class="py-2 cursor-pointer"
             @click="previewCity(searchResult)"
           >
-            {{ searchResult.name }} ({{ searchResult.address.countryCode }})
+            {{ searchResult.place_name }}
           </li>
         </template>
       </ul>
     </div>
-    <div class="py-20"></div>
+    <div class="flex flex-col gap-4">
+      <Suspense>
+        <CityList />
+        <template #fallback>
+          <CityCardSkeleton />
+        </template>
+      </Suspense>
+    </div>
   </main>
 </template>
 
@@ -46,89 +43,40 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import CityCardSkeleton from '../components/CityCardSkeleton.vue'
+import CityList from '../components/CityList.vue'
 
 const router = useRouter()
 const previewCity = (searchResult) => {
+  const [city, state] = searchResult.place_name.split(',')
   router.push({
     name: 'cityView',
-    params: {
-      country: searchResult.address.countryCode,
-      city: searchResult.name
-    },
+    params: { state: state.replaceAll(' ', ''), city: city },
     query: {
-      lat: searchResult.geoCode.latitude,
-      lng: searchResult.geoCode.longitude,
+      lat: searchResult.geometry.coordinates[1],
+      lng: searchResult.geometry.coordinates[0],
       preview: true
     }
   })
 }
 
-// const mapboxAPIKey =
-//   'pk.eyJ1Ijoiam9obmtvbWFybmlja2kiLCJhIjoiY2t5NjFz0DZvMHJkaDJ1bWx60GVieGxreSJ9.IpojdT3U3NENknF6_WhR2Q'
-// const searchQuery = ref('')
-// const queryTimeout = ref(null)
-// const mapboxSearchResults = ref(null)
-
-// const getSearchResults = () => {
-//   clearTimeout(queryTimeout.value)
-//   queryTimeout.value = setTimeout(async () => {
-//     if (searchQuery.value !== '') {
-//       const result = await axios.get(
-//         `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json?access_token=${mapboxAPIKey}`
-//       )
-//       mapboxSearchResults.value = result.data.features
-//       console.log(mapboxSearchResults.value)
-//       return
-//     }
-//     mapboxSearchResults.value = null
-//   }, 300)
-// }
-
-const apiKey = 'EZ9AtUGWJtOLJG9Fvqi9CKp8gzlEFs4d'
-const apiSecret = 'DUMHhESgvsx6FGwh'
+const mapboxAPIKey =
+  'pk.eyJ1Ijoiam9obmtvbWFybmlja2kiLCJhIjoiY2t5NjFzODZvMHJkaDJ1bWx6OGVieGxreSJ9.IpojdT3U3NENknF6_WhR2Q'
 const searchQuery = ref('')
 const queryTimeout = ref(null)
 const mapboxSearchResults = ref(null)
-const searchError = ref(false)
+const searchError = ref(null)
 
 const getSearchResults = () => {
   clearTimeout(queryTimeout.value)
   queryTimeout.value = setTimeout(async () => {
-    if (searchQuery.value.length > 2) {
+    if (searchQuery.value !== '') {
       try {
-        const tokenResponse = await axios.post(
-          'https://test.api.amadeus.com/v1/security/oauth2/token',
-          `grant_type=client_credentials&client_id=${apiKey}&client_secret=${apiSecret}`,
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          }
-        )
-
-        const accessToken = tokenResponse.data.access_token
-
-        //https://developers.amadeus.com/self-service/category/destination-experiences/api-doc/city-search/api-reference
         const result = await axios.get(
-          `https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=${searchQuery.value}&max=5`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json?access_token=${mapboxAPIKey}&types=place`
         )
-
-        mapboxSearchResults.value = result.data.data
-        searchError.value = false
-      } catch (error) {
-        if (error.response) {
-          console.log('primer error')
-          if (error.response.data.code === 4926) {
-            console.error('Error: INVALID DATA RECEIVED')
-            console.error('Detail:', error.response.data.detail)
-            console.log('error enter')
-          }
-        }
+        mapboxSearchResults.value = result.data.features
+      } catch {
         searchError.value = true
       }
 
@@ -138,3 +86,5 @@ const getSearchResults = () => {
   }, 300)
 }
 </script>
+
+<style lang="scss" scoped></style>
