@@ -57,6 +57,7 @@ import BaseModal from './BaseModal.vue'
 import { ref } from 'vue'
 import { uid } from 'uid'
 
+// SAVED CITIES \\
 const savedCities = ref([])
 const route = useRoute()
 const router = useRouter()
@@ -67,21 +68,30 @@ const addCity = () => {
   }
 
   const locationObject = {
+    // Assign a unique ID to the location (requires npm package 'uid').
     id: uid(),
+    // Get the state from the current route parameters.
     state: route.params.state,
+    // Get the city from the current route parameters.
     city: route.params.city,
+    // Get the latitude and longitude from the current route query parameters.
     coords: {
       lat: route.query.lat,
       lng: route.query.lng
     }
   }
 
+  // Add the new location object to the 'savedCities' array.
   savedCities.value.push(locationObject)
+
+  // Save the updated 'savedCities' array to local storage.
   localStorage.setItem('savedCities', JSON.stringify(savedCities.value))
 
+  // Update the URL query parameters to include the new location's ID.
   let query = Object.assign({}, route.query)
-  delete query.preview
-  router.replace({ query })
+  delete query.preview // Remove the 'preview' query parameter, if it exists.
+  query.id = locationObject.id // Add the new location's ID.
+  router.replace({ query }) // Replace the current route with the updated query parameters.
 }
 
 const modalActive = ref(null)
