@@ -8,14 +8,28 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      meta: {
+        title: 'Home'
+      }
     },
     {
       path: '/weather/:state/:city',
       name: 'cityView',
-      component: CityView
+      component: CityView,
+      meta: {
+        title: 'Weather'
+      }
     }
   ]
+})
+
+//targe the route before re enter
+router.beforeEach((to, from, next) => {
+  document.title = `${
+    to.params.state ? `${to.params.city}, ${to.params.state}` : to.meta.title
+  } | The Local Weather`
+  next()
 })
 
 export default router
